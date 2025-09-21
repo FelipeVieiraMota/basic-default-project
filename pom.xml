@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>api-authorization</module>
         <module>infra-gateway</module>
         <module>infra-analytics</module>
         <module>infra-discovery</module>
