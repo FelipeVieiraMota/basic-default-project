@@ -1,0 +1,54 @@
+services:
+
+  infra-analytics: # Spring Boot Admin
+    build: ./infra-analytics
+    ports:
+      - "10000:10000"
+    networks: [backend]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://infra-analytics:10000/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  infra-discovery: # Eureka
+    build: ./infra-discovery
+    ports:
+      - "8761:8761"
+    networks: [backend]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://infra-discovery:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  infra-gateway: # Spring Cloud Gateway
+    build: ./infra-gateway
+    ports:
+      - "80:80"
+    networks: [backend]
+    depends_on:
+      infra-discovery:
+        condition: service_healthy
+      infra-analytics:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # Eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://infra-discovery:8761/eureka/
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      # SCG discovery locator
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "true"
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: "true"
+      # Spring Boot Admin
+      SPRING_BOOT_ADMIN_CLIENT_URL: http://infra-analytics:10000
+
+
+networks:
+  backend:
+    driver: bridge
