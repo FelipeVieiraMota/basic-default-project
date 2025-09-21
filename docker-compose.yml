@@ -50,7 +50,7 @@ services:
       # Spring Boot Admin
       SPRING_BOOT_ADMIN_CLIENT_URL: http://infra-analytics:10000
       # Keycloak config (match your Keycloak realm & client)
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/myrealm
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://keycloak:11000/realms/myrealm
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID: gateway
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET: mysecret
 
@@ -62,10 +62,10 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_DB: dev-mem
     ports:
-      - "8081:8080" # host:container (8081 on host, 8080 in container)
+      - "11000:11000" # host:container (11000 on host, 11000 in container)
     networks: [backend]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:11000/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
