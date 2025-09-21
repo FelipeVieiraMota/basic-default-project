@@ -36,6 +36,8 @@ services:
         condition: service_healthy
       infra-analytics:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: docker
       # Eureka
@@ -47,7 +49,26 @@ services:
       SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: "true"
       # Spring Boot Admin
       SPRING_BOOT_ADMIN_CLIENT_URL: http://infra-analytics:10000
+      # Keycloak config (match your Keycloak realm & client)
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/myrealm
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID: gateway
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET: mysecret
 
+  keycloak: # Keycloak server
+    image: quay.io/keycloak/keycloak:26.0.5
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: dev-mem
+    ports:
+      - "8081:8080" # host:container (8081 on host, 8080 in container)
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 networks:
   backend:
