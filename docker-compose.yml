@@ -54,17 +54,55 @@ services:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID: gateway
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET: mysecret
 
+  pgadmin:
+    image: dpage/pgadmin4:8
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks: [backend]
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    networks: [backend]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "19000:9000"
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-defaultpassword123}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Allows Portainer to access Docker daemon
+      - portainer_data:/data
+    networks: [backend]
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.5
     command: start-dev
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_DB: dev-mem
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
     ports:
-      - "11000:8080"          # host:container
+      - "11000:8080"
     networks: [backend]
-    restart: unless-stopped   # optional but helpful
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "timeout 2 bash -lc 'true' >/dev/null 2>&1 || exit 0; exec 3<>/dev/tcp/127.0.0.1/8080; echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\n\r\n' >&3; head -n1 <&3 | grep -q 200" ]
       interval: 10s
@@ -74,3 +112,7 @@ services:
 networks:
   backend:
     driver: bridge
+
+volumes:
+  postgres_data:
+  portainer_data:
